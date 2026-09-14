@@ -365,3 +365,4 @@ st.divider()
 
 st.caption(
     "GrubGoblin demo — powered by sample restaurant sales data."
+)

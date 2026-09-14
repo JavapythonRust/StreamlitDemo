@@ -1,13 +1,11 @@
 import streamlit as st
 from pathlib import Path
+import tempfile
 
+from toast import ToastImporter
 from read import SalesReader
 from analytics import Analytics
 
-
-# -----------------------------
-# Page setup
-# -----------------------------
 
 st.set_page_config(
     page_title="GrubGoblin",
@@ -19,39 +17,39 @@ st.title("🧌 GrubGoblin")
 st.caption("Restaurant sales analytics")
 
 
-# -----------------------------
-# Load dummy sales data
-# -----------------------------
-
+# Find the Toast CSV
 BASE_DIR = Path(__file__).resolve().parent
-SALES_FILE = BASE_DIR / "sales.csv"
+TOAST_FILE = BASE_DIR / "sales.csv"
 
-if not SALES_FILE.exists():
+if not TOAST_FILE.exists():
     st.error("sales.csv was not found.")
     st.stop()
 
 
-# -----------------------------
-# Process sales using
-# existing GrubGoblin code
-# -----------------------------
-
+# Convert Toast data and run GrubGoblin analytics
 try:
-    reader = SalesReader(SALES_FILE)
-    sales = reader.process()
+    with tempfile.TemporaryDirectory() as temp_dir:
 
-    analytics = Analytics(sales)
-    summary = analytics.summary()
+        converted_file = Path(temp_dir) / "converted_sales.csv"
+
+        importer = ToastImporter(TOAST_FILE)
+
+        importer.import_sales(
+            output_file=converted_file
+        )
+
+        reader = SalesReader(converted_file)
+        sales = reader.process()
+
+        analytics = Analytics(sales)
+        summary = analytics.summary()
 
 except Exception as e:
     st.error(f"Could not process sales data: {e}")
     st.stop()
 
 
-# -----------------------------
-# Dashboard metrics
-# -----------------------------
-
+# Dashboard
 st.header("Dashboard")
 
 col1, col2, col3, col4 = st.columns(4)
@@ -81,10 +79,7 @@ with col4:
     )
 
 
-# -----------------------------
-# Quick insights
-# -----------------------------
-
+# Quick Insights
 st.header("Quick Insights")
 
 col1, col2, col3 = st.columns(3)
@@ -102,10 +97,7 @@ with col3:
     st.write(summary["busiest_day"])
 
 
-# -----------------------------
-# Sales data
-# -----------------------------
-
+# Sales Data
 st.header("Sales Data")
 
 st.dataframe(
@@ -115,10 +107,7 @@ st.dataframe(
 )
 
 
-# -----------------------------
-# Product performance
-# -----------------------------
-
+# Products
 st.header("Products")
 
 product_data = (
@@ -140,10 +129,7 @@ st.dataframe(
 )
 
 
-# -----------------------------
-# Revenue by product
-# -----------------------------
-
+# Revenue by Product
 st.subheader("Revenue by Product")
 
 st.bar_chart(
@@ -151,10 +137,7 @@ st.bar_chart(
 )
 
 
-# -----------------------------
-# Revenue over time
-# -----------------------------
-
+# Revenue Over Time
 st.subheader("Revenue Over Time")
 
 daily_revenue = (
@@ -168,10 +151,7 @@ st.line_chart(
 )
 
 
-# -----------------------------
-# Bundle opportunities
-# -----------------------------
-
+# Bundle Opportunities
 st.header("Bundle Opportunities")
 
 bundles = summary.get(
@@ -189,10 +169,7 @@ else:
     st.info("No bundle opportunities found.")
 
 
-# -----------------------------
-# Patterns
-# -----------------------------
-
+# Sales Patterns
 st.header("Sales Patterns")
 
 patterns = summary.get(
